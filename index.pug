@@ -1,0 +1,21 @@
+html
+  head
+    title SVG Tiler GUI
+    link(href="https://fonts.googleapis.com/css?family=Merriweather:400,400i,700&subset=latin-ext", rel="stylesheet", crossorigin="anonymous")
+    link(rel="stylesheet", href="https://use.fontawesome.com/releases/v5.9.0/css/all.css")
+    link(rel="stylesheet", href="index.css")
+    script(src="gui.js")
+  body.flexrow
+    .sidebar
+      input(type="text", size="4")#key
+    .rhs.grow.flexcol
+      .toolbar
+        button
+          i.fas.fa-border-all
+        button
+          i.fas.fa-upload
+        button
+          i.fas.fa-download
+      .svg.grow
+      .tabs
+        .tab Main
