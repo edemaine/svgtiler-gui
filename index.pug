@@ -4,18 +4,21 @@ html
     link(href="https://fonts.googleapis.com/css?family=Merriweather:400,400i,700&subset=latin-ext", rel="stylesheet", crossorigin="anonymous")
     link(rel="stylesheet", href="https://use.fontawesome.com/releases/v5.9.0/css/all.css")
     link(rel="stylesheet", href="index.css")
+    script(src="node_modules/svgtiler/lib/svgtiler.js")
     script(src="gui.js")
   body.flexrow
     .sidebar
-      input(type="text", size="4")#key
+      #mappings
+      input#key(type="text", size="4", style="visibility: hidden")
     .rhs.grow.flexcol
       .toolbar
-        button
-          i.fas.fa-border-all
-        button
+        button#load
           i.fas.fa-upload
-        button
+        input(type="file").hide#file
+        button#save
           i.fas.fa-download
+        button#border
+          i.fas.fa-border-all
       .svg.grow
       .tabs
         .tab Main
