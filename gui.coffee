@@ -2,6 +2,7 @@ mappings = new Mappings()
 
 id = (i) -> document.getElementById i
 text = (t) -> document.createTextNode t
+TODO = -> alert "Sorry, this feature isn't supported yet."
 
 tiles = {}
 
@@ -18,7 +19,7 @@ window.onload = ->
       del = document.createElement 'i'
       del.className = 'fas fa-times delete'
       del.addEventListener 'click', ->
-        #TODO
+        TODO()
       div.appendChild del
       id('mappings').appendChild div
       id('key').style.visibility = 'visible'
@@ -32,3 +33,5 @@ window.onload = ->
     tiles[key] = tile = document.createElement 'div'
     tile.appendChild text key.replace(/ /g, '␣') or '(blank)'
     id('tiles').appendChild tile
+  id('save').addEventListener 'click', TODO
+  id('border').addEventListener 'click', TODO
