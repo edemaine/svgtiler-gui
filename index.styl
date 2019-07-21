@@ -3,7 +3,17 @@ body
   width: 100vw
   height: 100vh
   margin: 0
-  font: Merriweather, serif
+  font-family: 'Merriweather', serif
+
+// Monospace font including ␣
+code, pre, #key
+  font-family: 'Inconsolata', monospace
+@font-face
+  font-family: 'Inconsolata'
+  font-style: normal
+  font-weight: 400
+  font-display: swap
+  src: local('Inconsolata Regular'), local('Inconsolata-Regular'), url(https://cdn.jsdelivr.net/gh/googlefonts/Inconsolata/fonts/otf/Inconsolata-Regular.otf)
 
 // Toolbar on top
 .toolbar, .sidebar
@@ -20,10 +30,14 @@ body
   box-shadow: 0 1px 3px 1px rgba(60,60,60,.2)
   background: #eee
   padding: 5px
+  cursor: pointer
 
 // Tileset on left
 form
   margin-bottom: 0
+input
+  font-size: 16
+  margin: 0 -2px
 .delete:hover
   cursor: pointer
 
