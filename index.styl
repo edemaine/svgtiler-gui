@@ -1,14 +1,17 @@
+// Full-page layout
 body
   width: 100vw
   height: 100vh
   margin: 0
   font: Merriweather, serif
 
+// Toolbar on top
 .toolbar, .sidebar
   padding: 5px
 .toolbar, .sidebar, .tabs
   background: #ccc
 
+// Tabs on bottom
 .tabs
   margin-left: -2px
 .tab
@@ -17,6 +20,12 @@ body
   box-shadow: 0 1px 3px 1px rgba(60,60,60,.2)
   background: #eee
   padding: 5px
+
+// Tileset on left
+form
+  margin-bottom: 0
+.delete:hover
+  cursor: pointer
 
 // Flex
 .flexcol
