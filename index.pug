@@ -8,11 +8,11 @@ html
     script(src="node_modules/svgtiler/lib/svgtiler.js")
     script(src="gui.js")
   body.flexrow
-    .sidebar
+    .sidebar.flexcol
       #mappings
       form#keyForm
         input#key(type="text", size="8", style="visibility: hidden")
-      #tiles
+      #tiles.grow.shrink
     .rhs.grow.flexcol
       .toolbar
         button#load

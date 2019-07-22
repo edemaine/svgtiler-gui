@@ -37,15 +37,26 @@ form
   margin-bottom: 0
 input
   font-size: 16
-  margin-left: -2px
-  margin-right: -1px
+  width: 100%
 .delete:hover
   cursor: pointer
-.tile
+#tiles
+  overflow-y: scroll
+  margin-right: -5px
   margin-top: 5px
-  background: white
-  code
+.tile
+  margin-bottom: 5px
+  margin-right: 3px
+  padding: 5px
+  text-align: center
+  background: #ddd
+  border: solid #bbb
+  > code
     display: block
+    text-align: left
+  > svg
+    background: white
+    box-shadow: 0 1px 6px 1px rgba(60,60,60,.4)
 
 // Flex
 .flexcol
@@ -56,6 +67,8 @@ input
   flex-direction: row
 .grow
   flex-grow: 1
+.shrink
+  flex-shrink: 1
 
 .hide
   display: none

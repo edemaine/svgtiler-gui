@@ -1,3 +1,5 @@
+sidebarScale = 2
+
 mappings = new svgtiler.Mappings()
 tiles = {}
 
@@ -41,19 +43,20 @@ addTile = (key) ->
   symbolSvg.setAttribute 'id', symbolId = 't' + symbol.id()
   svg = document.createElementNS svgtiler.SVGNS, 'svg'
   #svg.setAttribute 'xmlns:xlink', svgtiler.XLINKNS
-  svg.setAttribute 'width', symbol.width
-  svg.setAttribute 'height', symbol.height
+  svg.setAttribute 'width', symbol.width * sidebarScale
+  svg.setAttribute 'height', symbol.height * sidebarScale
   svg.appendChild symbolSvg
-  svg.setAttributeNS svgtiler.SVGNS, 'viewBox', symbolSvg.getAttribute 'viewBox'
+  svg.setAttributeNS svgtiler.SVGNS, 'viewBox',
+    "0 0 #{symbol.viewBox[2]} #{symbol.viewBox[3]}"
+  if symbolSvg.tagName == 'symbol'
+    use = document.createElementNS svgtiler.SVGNS, 'use'
+    use.setAttribute 'href', '#' + symbolId
+    svg.appendChild use
   tiles[key] = tile = element 'div', 'tile', [
     element 'code', null, [text formatKey key]
     svg
   ]
   id('tiles').appendChild tile
-  if symbolSvg.tagName == 'symbol'
-    use = document.createElementNS svgtiler.SVGNS, 'use'
-    use.setAttribute 'href', '#' + symbolId
-    svg.appendChild use
 
 window.onload = ->
   id('load').addEventListener 'click', ->
