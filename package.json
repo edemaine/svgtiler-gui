@@ -16,6 +16,6 @@
     "gulp-stylus": "^2.7.0"
   },
   "dependencies": {
-    "svgtiler": "^1.9.1"
+    "svgtiler": "^1.9.2"
   }
 }
