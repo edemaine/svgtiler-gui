@@ -5,7 +5,7 @@ defaultMapping = '''
 - <symbol viewBox="0 0 20 10"><rect width="20" height="10" fill="purple"/></symbol>
 | <symbol viewBox="0 0 10 20"><rect width="10" height="20" fill="purple"/></symbol>
 + <symbol viewBox="0 0 10 10"><rect width="10" height="10" fill="green"/></symbol>
-X <symbol viewBox="0 0 20 20" width="20" height="20"><circle r="10" fill="red"/></symbol>
+X <symbol viewBox="-10 -10 20 20" width="auto" height="auto"><circle r="10" fill="red"/></symbol>
   <symbol viewBox="0 0 10 10" width="10" height="10"></symbol>
 '''
 
