@@ -45,6 +45,7 @@ addMapping = (mapping) ->
   else
     div.setAttribute 'title', 'symbols: ' +
       (formatKey(key) for key of mapping.map).join ', '
+    addTile key for key of mapping.map
   id('key').style.visibility = 'visible'
 
 addTile = (key) ->
