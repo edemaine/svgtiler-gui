@@ -2,6 +2,7 @@ sidebarScale = 2
 
 mappings = new svgtiler.Mappings()
 tiles = {}
+selectedTile = null
 
 id = (i) -> document.getElementById i
 text = (t) -> document.createTextNode t
@@ -60,10 +61,15 @@ addTile = (key) ->
     svg
   ]
   del.addEventListener 'click', -> removeTile(key)
+  tile.addEventListener 'click', ->
+    tiles[selectedTile]?.classList.remove 'selected'
+    this.classList.add 'selected'
+    selectedTile = key
   id('tiles').appendChild tile
 
 removeTile = (key) ->
   return unless key of tiles
+  selectedTile = null if selectedTile == key
   tile = tiles[key]
   id('tiles').removeChild tile
 
