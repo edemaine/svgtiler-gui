@@ -1,16 +1,20 @@
 sidebarScale = 2
+mainScale = 2
 
 defaultMapping = '''
 - <symbol viewBox="0 0 20 10"><rect width="20" height="10" fill="purple"/></symbol>
 | <symbol viewBox="0 0 10 20"><rect width="10" height="20" fill="purple"/></symbol>
 + <symbol viewBox="0 0 10 10"><rect width="10" height="10" fill="green"/></symbol>
-X <symbol viewBox="-10 -10 20 20" width="auto" height="auto"><circle r="10" fill="red"/></symbol>
-  <symbol viewBox="-10 -10 20 20" width="auto" height="auto"></symbol>
+X <symbol viewBox="0 0 10 10" width="10" height="10"><circle r="10" fill="red"/></symbol>
+  <symbol viewBox="0 0 10 10" width="10" height="10"></symbol>
 '''
 
 mappings = new svgtiler.Mappings()
 tiles = {}
 selectedTile = null
+board = null
+
+svgtiler.Drawing.keepMargins = true
 
 id = (i) -> document.getElementById i
 text = (t) -> document.createTextNode t
@@ -81,8 +85,132 @@ removeTile = (key) ->
   tile = tiles[key]
   id('tiles').removeChild tile
 
+class Board
+  @minSize: 3
+
+  constructor: (nx=Board.minSize, ny=Board.minSize, @emptyTile=' ') ->
+    @board = (@emptyTile for y in [0...ny] for x in [0...nx])
+    @redraw()
+
+  nx: -> @board.length
+  ny: -> @board[0].length
+  set: (x, y, key) -> @board[x][y] = key
+  get: (x, y) -> @board[x]?[y] ? @emptyTile
+
+  resize: (dnx, dny, dx, dy, skip) ->
+    nx = @nx() + dnx
+    ny = @ny() + dny
+    @init nx, ny, null
+    @board = for x in [0...nx]
+      for y in [0...ny]
+        continue if skip? and skip x, y
+        if typeof dx == 'function'
+          xold = x - dx x, y
+        else
+          xold = x - dx
+        if typeof dy == 'function'
+          yold = y - dy x, y
+        else
+          yold = y - dy
+        @get xold, yold
+    @redraw()
+
+  addRow: (coord, copy) ->
+    @resize 0, 1, 0,
+      ((x, y) -> y >= coord),              # dy
+      ((x, y) -> not copy and y == coord)  # skip
+  addColumn: (coord, copy) ->
+    @resize 1, 0,
+      ((x, y) -> x >= coord), 0,           # dx, dy
+      ((x, y) -> not copy and x == coord)  # skip
+  removeRow: (coord) ->
+    @resize 0, -1, 0,
+      ((x, y) -> -(y >= coord))            # dy
+  removeColumn: (coord) ->
+    @resize -1, 0,
+      ((x, y) -> -(x >= coord)), 0         # dx, dy
+
+  emptyX: (x) ->
+    for cell in @board[x] when cell != emptyTile
+      return false
+    true
+  emptyY: (y) ->
+    for row in @board when row[y] != emptyTile
+      return false
+    true
+
+  autosize: ->
+    ## Left
+    for x in [0...@nx()]
+      break unless @emptyX x
+    if x == 0  ## no blanks: grow
+      @resize 1, 0, 1, 0
+    else
+      x -= 1  ## leave one blank on side
+      x = Math.min x, @nx() - Board.minSize  ## size at least Board.minSize
+      if x > 0
+        @resize -x, 0, -x, 0
+    ## Right
+    for x in [@nx()-1..0]
+      break unless @emptyX x
+    if x == @nx()-1  ## no blanks: grow
+      @resize 1, 0, 0, 0
+    else
+      x += 2  ## leave one blank
+      x = Math.max x, Board.minSize  ## size at least Board.minSize
+      if x < @nx()
+        @resize x - @nx(), 0, 0, 0
+    ## Top
+    for y in [0...@ny()]
+      break unless @emptyY y
+    if y == 0  ## no blanks: grow
+      @resize 0, 1, 0, 1
+    else
+      y -= 1  ## leave one blank on side
+      y = Math.min y, @ny() - Board.minSize  ## size at least Board.minSize
+      if y > 0
+        @resize 0, -y, 0, -y
+    ## Bottom
+    for y in [@ny()-1..0]
+      break unless @emptyY y
+    if y == @ny()-1  ## no blanks: grow
+      @resize 0, 1, 0, 0
+    else
+      y += 2  ## leave one blank
+      y = Math.max y, Board.minSize  ## size at least Board.minSize
+      if y < @ny()
+        @resize 0, y - @ny(), 0, 0
+  
+  toDrawing: ->
+    d = new svgtiler.Drawing()
+    d.load @board
+    d
+
+  # TODO: Maybe Separate view from the model because we want the same board
+  #       to be displayed in several different panels
+  redraw: ->
+    drawing = @toDrawing()
+    svg = drawing.renderSVGDOM(mappings).documentElement.cloneNode(true)
+    console.log(svg)
+    boardDiv = id('board')
+    boardDiv.removeChild boardDiv.firstChild while boardDiv.firstChild
+    boardDiv.appendChild(svg)
+
+    svg.removeAttribute 'preserveAspectRatio'
+    svg.setAttribute 'width', svg.getAttribute('width') * mainScale
+    svg.setAttribute 'height', svg.getAttribute('height') * mainScale
+
+    # Hack to recalculate... something? I'm not really sure what this does...
+    boardDiv.innerHTML = boardDiv.innerHTML
+
 window.onload = ->
   load 'default.txt', defaultMapping
+  board = new Board()
+  # test board
+  board.set(0, 0, '+')
+  board.set(1, 1, '+')
+  board.redraw()
+
   id('load').addEventListener 'click', ->
     id('file').click()
   id('file').addEventListener 'input', ->
