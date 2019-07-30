@@ -225,11 +225,16 @@ class Board
       row = elt.getAttribute('data-r')
       col = elt.getAttribute('data-c')
       do (row, col) =>
-        elt.addEventListener 'click', () =>
-          console.log(row, col)
+        tryPaint = =>
+          # console.log(row, col)
           if selectedTile
             @set(row, col, selectedTile)
             @redraw()
+
+        elt.addEventListener 'mousedown', tryPaint
+        elt.addEventListener 'mousemove', (e) =>
+          tryPaint() if e.buttons & 1 # lowest bit = left button
+
 
     return
 
