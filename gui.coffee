@@ -53,10 +53,19 @@ addTile = (key) ->
     use.setAttribute 'href', '#' + symbolId
     svg.appendChild use
   tiles[key] = tile = element 'div', 'tile', [
-    element 'code', null, [text formatKey key]
+    element 'div', null, [
+      element 'code', null, [text formatKey key]
+      del = element 'i', 'fas fa-times delete'
+    ]
     svg
   ]
+  del.addEventListener 'click', -> removeTile(key)
   id('tiles').appendChild tile
+
+removeTile = (key) ->
+  return unless key of tiles
+  tile = tiles[key]
+  id('tiles').removeChild tile
 
 window.onload = ->
   id('load').addEventListener 'click', ->
