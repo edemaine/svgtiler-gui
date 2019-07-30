@@ -205,8 +205,8 @@ class Board
 
     # Add bounding box to every symbol
     for elt in svg.children when elt.tagName == 'symbol' and elt.viewBox?
-      # quite hacky, probably fails horribly when there is overflow
       bbox = element 'rect', 'bbox', []
+      # quite hacky, probably fails horribly when the symbol has overflow
       bbox.setAttribute 'x', elt.viewBox.baseVal.x
       bbox.setAttribute 'y', elt.viewBox.baseVal.y
       bbox.setAttribute 'width', elt.viewBox.baseVal.width
@@ -227,7 +227,7 @@ class Board
       do (row, col) =>
         tryPaint = =>
           # console.log(row, col)
-          if selectedTile
+          if selectedTile? and @get(row, col) != selectedTile
             @set(row, col, selectedTile)
             @redraw()
 
@@ -235,14 +235,11 @@ class Board
         elt.addEventListener 'mousemove', (e) =>
           tryPaint() if e.buttons & 1 # lowest bit = left button
 
-
     return
 
 window.onload = ->
   load 'default.txt', defaultMapping
-  board = new Board()
-  # test board
-  board.redraw()
+  board = new Board(10, 10)
 
   id('load').addEventListener 'click', ->
     id('file').click()
@@ -258,3 +255,4 @@ window.onload = ->
     id('key').value = ''
   id('save').addEventListener 'click', TODO
   id('border').addEventListener 'click', TODO
+
