@@ -5,7 +5,7 @@ defaultMapping = '''
 - <symbol viewBox="0 0 20 10"><rect width="20" height="10" fill="purple"/></symbol>
 | <symbol viewBox="0 0 10 20"><rect width="10" height="20" fill="purple"/></symbol>
 + <symbol viewBox="0 0 10 10"><rect width="10" height="10" fill="green"/></symbol>
-X <symbol viewBox="0 0 10 10" width="10" height="10"><circle r="10" fill="red"/></symbol>
+X <symbol viewBox="0 0 20 20" width="20" height="20"><circle r="10" fill="red"/></symbol>
   <symbol viewBox="0 0 10 10" width="10" height="10"></symbol>
 '''
 
@@ -72,7 +72,9 @@ addTile = (key) ->
     ]
     svg
   ]
-  del.addEventListener 'click', -> removeTile(key)
+  del.addEventListener 'click', (e) ->
+    removeTile(key)
+    e.stopPropagation()
   tile.addEventListener 'click', ->
     tiles[selectedTile]?.classList.remove 'selected'
     this.classList.add 'selected'
@@ -83,6 +85,7 @@ removeTile = (key) ->
   return unless key of tiles
   selectedTile = null if selectedTile == key
   tile = tiles[key]
+  delete tiles[key]
   id('tiles').removeChild tile
 
 class Board
@@ -186,12 +189,11 @@ class Board
     d.load @board
     d
 
-  # TODO: Maybe Separate view from the model because we want the same board
+  # TODO: Maybe separate view from the model because we want the same board
   #       to be displayed in several different panels
   redraw: ->
     drawing = @toDrawing()
-    svg = drawing.renderSVGDOM(mappings).documentElement.cloneNode(true)
-    console.log(svg)
+    svg = drawing.renderSVGDOM(mappings).documentElement
     boardDiv = id('board')
     boardDiv.removeChild boardDiv.firstChild while boardDiv.firstChild
     boardDiv.appendChild(svg)
@@ -200,15 +202,40 @@ class Board
     svg.setAttribute 'width', svg.getAttribute('width') * mainScale
     svg.setAttribute 'height', svg.getAttribute('height') * mainScale
 
+    # Add bounding box to every symbol
+    for elt in svg.children when elt.tagName == 'symbol' and elt.viewBox?
+      # quite hacky, probably fails horribly when there is overflow
+      bbox = element 'rect', 'bbox', []
+      bbox.setAttribute 'x', elt.viewBox.baseVal.x
+      bbox.setAttribute 'y', elt.viewBox.baseVal.y
+      bbox.setAttribute 'width', elt.viewBox.baseVal.width
+      bbox.setAttribute 'height', elt.viewBox.baseVal.height
+      bbox.setAttribute 'fill', 'transparent'
+      bbox.setAttribute 'stroke', 'black'
+      bbox.setAttribute 'stroke-width', '0.1'
+      elt.appendChild bbox
+
     # Hack to recalculate... something? I'm not really sure what this does...
-    boardDiv.innerHTML = boardDiv.innerHTML
+    svg.outerHTML = svg.outerHTML
+    svg = boardDiv.firstChild
+
+    # Add click listeners
+    for elt in svg.children when elt.tagName == 'use'
+      row = elt.getAttribute('data-r')
+      col = elt.getAttribute('data-c')
+      do (row, col) =>
+        elt.addEventListener 'click', () =>
+          console.log(row, col)
+          if selectedTile
+            @set(row, col, selectedTile)
+            @redraw()
+
+    return
 
 window.onload = ->
   load 'default.txt', defaultMapping
   board = new Board()
   # test board
-  board.set(0, 0, '+')
-  board.set(1, 1, '+')
   board.redraw()
 
   id('load').addEventListener 'click', ->
