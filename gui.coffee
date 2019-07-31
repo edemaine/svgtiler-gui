@@ -1,5 +1,4 @@
 sidebarScale = 2
-mainScale = 2
 
 defaultMapping = '''
 - <symbol viewBox="0 0 20 10"><rect width="20" height="10" fill="purple"/></symbol>
@@ -13,8 +12,6 @@ mappings = new svgtiler.Mappings()
 tiles = {}
 selectedTile = null
 board = null
-
-svgtiler.Drawing.keepMargins = true
 
 id = (i) -> document.getElementById i
 text = (t) -> document.createTextNode t
@@ -92,58 +89,54 @@ removeTile = (key) ->
 class Board
   @minSize: 3
 
-  constructor: (nx=Board.minSize, ny=Board.minSize, @emptyTile=' ') ->
-    @board = (@emptyTile for y in [0...ny] for x in [0...nx])
-    @redraw()
+  constructor: (height=Board.minSize, width=Board.minSize, @emptyTile=' ') ->
+    @board = (@emptyTile for c in [0...width] for r in [0...height])
+    @listeners = []
+    @update()
 
-  nx: -> @board.length
-  ny: -> @board[0].length
-  set: (x, y, key) -> @board[x][y] = key
-  get: (x, y) -> @board[x]?[y] ? @emptyTile
+  addListener: (func) -> @listeners.push func
 
-  resize: (dnx, dny, dx, dy, skip) ->
-    nx = @nx() + dnx
-    ny = @ny() + dny
-    @init nx, ny, null
-    @board = for x in [0...nx]
-      for y in [0...ny]
-        continue if skip? and skip x, y
-        if typeof dx == 'function'
-          xold = x - dx x, y
-        else
-          xold = x - dx
-        if typeof dy == 'function'
-          yold = y - dy x, y
-        else
-          yold = y - dy
-        @get xold, yold
-    @redraw()
+  height: -> @board.length
+  width: -> @board[0].length
+  set: (r, c, key) -> @board[r][c] = key if @board[r]?[c]?
+  get: (r, c) -> @board[r]?[c] ? @emptyTile
 
-  addRow: (coord, copy) ->
-    @resize 0, 1, 0,
-      ((x, y) -> y >= coord),              # dy
-      ((x, y) -> not copy and y == coord)  # skip
-  addColumn: (coord, copy) ->
+  resize: (dh, dw, dr, dc, skip) ->
+    @board = for r in [0...@height() + dh]
+      for c in [0...@width() + dw]
+        continue if skip? and skip r, c
+        oldR = r - (dr?(r, c) ? dr)
+        oldC = c - (dc?(r, c) ? dc)
+        @get oldR, oldC
+    @update()
+
+  addRow: (row, copy) ->
+    console.log 'addRow', row
     @resize 1, 0,
-      ((x, y) -> x >= coord), 0,           # dx, dy
-      ((x, y) -> not copy and x == coord)  # skip
-  removeRow: (coord) ->
-    @resize 0, -1, 0,
-      ((x, y) -> -(y >= coord))            # dy
-  removeColumn: (coord) ->
+      ((r, c) -> r > row), 0,              # dr, dc
+      ((r, c) -> not copy and r == coord)  # skip
+  addColumn: (col, copy) ->
+    @resize 0, 1,
+      0, ((r, c) -> c > col),              # dr, dc
+      ((r, c) -> not copy and c == coord)  # skip
+  removeRow: (row) ->
     @resize -1, 0,
-      ((x, y) -> -(x >= coord)), 0         # dx, dy
+      ((r, c) -> -(r >= row)), 0           # dr, dc
+  removeColumn: (col) ->
+    @resize 0, -1,
+      0, ((r, c) -> -(c >= col))           # dr, dc
 
-  emptyX: (x) ->
-    for cell in @board[x] when cell != emptyTile
+  emptyRow: (r) ->
+    for cell in @board[r] when cell != emptyTile
       return false
     true
-  emptyY: (y) ->
-    for row in @board when row[y] != emptyTile
+  emptyCol: (c) ->
+    for row in @board when row[c] != emptyTile
       return false
     true
 
   autosize: ->
+    TODO() # TODO: update this to use [r][c] instead of [x][y]
     ## Left
     for x in [0...@nx()]
       break unless @emptyX x
@@ -184,27 +177,68 @@ class Board
       y = Math.max y, Board.minSize  ## size at least Board.minSize
       if y < @ny()
         @resize 0, y - @ny(), 0, 0
-  
+
   toDrawing: ->
     d = new svgtiler.Drawing()
-    d.load @board
+    d.data = (key for key in row for row in @board)
     d
 
-  # TODO: Maybe separate view from the model because we want the same board
-  #       to be displayed in several different panels
-  redraw: ->
-    drawing = @toDrawing()
-    svg = drawing.renderSVGDOM(mappings).documentElement
-    boardDiv = id('board')
-    boardDiv.removeChild boardDiv.firstChild while boardDiv.firstChild
-    boardDiv.appendChild(svg)
+  update: ->
+    # @autosize()
+    lis(this) for lis in @listeners
 
-    svg.removeAttribute 'preserveAspectRatio'
-    svg.setAttribute 'width', svg.getAttribute('width') * mainScale
-    svg.setAttribute 'height', svg.getAttribute('height') * mainScale
+class BoardView
+  @defaultScale: 2
 
-    # Add bounding box to every symbol
-    for elt in svg.children when elt.tagName == 'symbol' and elt.viewBox?
+  constructor: (@board, @boardDiv) ->
+    @board.addListener(@redraw)
+    @scale = BoardView.defaultScale
+    @redraw()
+
+  @addRowKey: '__add_row__'
+  @addColKey: '__add_col__'
+  @removeRowKey: '__remove_row__'
+  @removeColKey: '__remove_col__'
+  @emptySpecialKey: '__empty__'
+
+  isSpecialKey: (key) -> /^__\w+__$/i.test key
+
+  uiMappingFunc: (key) =>
+    return unless @isSpecialKey key
+    return '' if key == BoardView.emptySpecialKey
+    isRow = key in [BoardView.addRowKey, BoardView.removeRowKey]
+    isAdd = key in [BoardView.addRowKey, BoardView.addColKey]
+    """
+    <symbol viewBox='0 0 20 20' #{if isRow then 'height' else 'width'}='auto'>
+      <rect width='12' height='12' x='4' y='4' rx='4' fill='#{if isAdd then 'green' else 'red'}' />
+      <text class='fa' x='10' y='10' alignment-baseline='middle' text-anchor='middle' stroke='white'>
+        #{if isAdd then '+' else '&#8722;'}
+      </text>
+    </symbol>
+    """
+
+  preprocessDrawing: (drawing) ->
+    height = drawing.data.length
+    width = drawing.data[0].length
+    for row in drawing.data
+      row.push BoardView.addRowKey
+      row.push if height > 1 then BoardView.removeRowKey else BoardView.emptySpecialKey
+
+    drawing.data.push(BoardView.addColKey for i in [0...width])
+    if width > 1
+      drawing.data.push(BoardView.removeColKey for i in [0...width])
+    else
+      drawing.data.push(BoardView.emptySpecialKey for i in [0...width])
+
+    drawing.data[height].push(BoardView.emptySpecialKey, BoardView.emptySpecialKey)
+    drawing.data[height+1].push(BoardView.emptySpecialKey, BoardView.emptySpecialKey)
+    return
+
+  postprocessSymbols: (svg) ->
+    # Add bounding box to every non-special symbol
+    for elt in svg.children when elt.tagName == 'symbol' and
+                                 elt.viewBox? and
+                                 not @isSpecialKey elt.id
       bbox = element 'rect', 'bbox', []
       # quite hacky, probably fails horribly when the symbol has overflow
       bbox.setAttribute 'x', elt.viewBox.baseVal.x
@@ -216,30 +250,60 @@ class Board
       bbox.setAttribute 'stroke-width', '0.1'
       elt.appendChild bbox
 
+  redraw: =>
+    drawing = @board.toDrawing()
+    @preprocessDrawing drawing
+    console.log drawing.data
+
+    uiMapping = new svgtiler.Mapping()
+    uiMapping.load(@uiMappingFunc)
+    newMappings = new svgtiler.Mappings [uiMapping, mappings]
+
+    svg = drawing.renderSVGDOM(newMappings).documentElement
+    @boardDiv.removeChild @boardDiv.firstChild while @boardDiv.firstChild
+    @boardDiv.appendChild(svg)
+
+    svg.removeAttribute 'preserveAspectRatio'
+    svg.setAttribute 'width', svg.getAttribute('width') * @scale
+    svg.setAttribute 'height', svg.getAttribute('height') * @scale
+
+    @postprocessSymbols(svg)
+
     # Hack to recalculate... something? I'm not really sure what this does...
     svg.outerHTML = svg.outerHTML
-    svg = boardDiv.firstChild
+    svg = @boardDiv.firstChild
 
     # Add click listeners
     for elt in svg.children when elt.tagName == 'use'
-      row = elt.getAttribute('data-r')
-      col = elt.getAttribute('data-c')
+      row = elt.getAttribute 'data-r'
+      col = elt.getAttribute 'data-c'
       do (row, col) =>
-        tryPaint = =>
-          # console.log(row, col)
-          if selectedTile? and @get(row, col) != selectedTile
-            @set(row, col, selectedTile)
-            @redraw()
+        key = elt.getAttribute('xlink:href').slice(1)
+        if 0 <= row < @board.height() and 0 <= col < @board.width()
+          tryPaint = =>
+            # console.log(row, col)
+            if selectedTile? and @board.get(row, col) != selectedTile
+              @board.set row, col, selectedTile
+              @board.update()
 
-        elt.addEventListener 'mousedown', tryPaint
-        elt.addEventListener 'mousemove', (e) =>
-          tryPaint() if e.buttons & 1 # lowest bit = left button
+          elt.addEventListener 'mousedown', tryPaint
+          elt.addEventListener 'mousemove', (e) =>
+            tryPaint() if e.buttons & 1 # lowest bit = left button
+        else if key == BoardView.addRowKey
+          elt.addEventListener 'click', => @board.addRow row, true
+        else if key == BoardView.addColKey
+          elt.addEventListener 'click', => @board.addColumn col, true
+        else if key == BoardView.removeRowKey
+          elt.addEventListener 'click', => @board.removeRow row
+        else if key == BoardView.removeColKey
+          elt.addEventListener 'click', => @board.removeColumn col
 
     return
 
 window.onload = ->
   load 'default.txt', defaultMapping
   board = new Board(10, 10)
+  boardView = new BoardView(board, id('board'))
 
   id('load').addEventListener 'click', ->
     id('file').click()
