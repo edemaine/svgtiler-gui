@@ -43,8 +43,9 @@ Constraints:
 * Restrict painting to this selection (and letter press Unrestrict button)
 * Save these restriction patterns, or rely on selection saving
 * Restrict certain symbols to certain patterns of cells:
-  * Function (in symbol file?) deciding whether symbol is allowed in certain
-    coordinates
+  * CoffeeScript/JavaScript definition of a symbol can throw an exception to
+    indicate that this use of symbol is invalid (e.g. bad neighbors or bad
+    parity etc.)
   * GUI: make selection, then drag it to a symbol?
 * Matching edge lengths?
 * Column widths and row heights constrained?
