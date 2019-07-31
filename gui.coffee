@@ -36,7 +36,7 @@ addMapping = (mapping) ->
     text mapping.filename + " "
     del = element 'i', 'fas fa-times delete'
   ]
-  del.addEventListener 'click', TODO
+  del.addEventListener 'click', -> removeMapping(mapping)
   if mapping.function?
     div.setAttribute 'title', 'function-defined mapping'
   else
@@ -44,6 +44,16 @@ addMapping = (mapping) ->
       (formatKey(key) for key of mapping.map).join ', '
     addTile key for key of mapping.map
   id('key').style.visibility = 'visible'
+  board?.update()
+
+removeMapping = (mapping) ->
+  index = mappings.maps.indexOf mapping
+  return unless index > -1
+  mappings.maps.splice(index, 1)
+  id('mappings').removeChild id('mappings').children[index]
+  # removeTile key for key of mapping.map
+  id('key').style.visibility = if mappings.maps.length then 'visible' else 'hidden'
+  board?.update()
 
 addTile = (key) ->
   return if key of tiles
@@ -313,6 +323,7 @@ window.onload = ->
     reader = new FileReader()
     reader.onload = -> load file.name, reader.result
     reader.readAsText file, encoding: svgtiler.Input.encoding
+    id('file').value = null;
   id('keyForm').addEventListener 'submit', (e) ->
     e.preventDefault()
     addTile id('key').value
