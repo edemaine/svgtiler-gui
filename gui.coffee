@@ -249,7 +249,7 @@ class BoardView
     for elt in svg.children when elt.tagName == 'symbol' and
                                  elt.viewBox? and
                                  not @isSpecialKey elt.id
-      bbox = element 'rect', 'bbox', []
+      bbox = document.createElementNS svgtiler.SVGNS, 'rect'
       # quite hacky, probably fails horribly when the symbol has overflow
       bbox.setAttribute 'x', elt.viewBox.baseVal.x
       bbox.setAttribute 'y', elt.viewBox.baseVal.y
@@ -279,16 +279,13 @@ class BoardView
 
     @postprocessSymbols(svg)
 
-    # Hack to recalculate... something? I'm not really sure what this does...
-    svg.outerHTML = svg.outerHTML
-    svg = @boardDiv.firstChild
-
     # Add click listeners
     for elt in svg.children when elt.tagName == 'use'
       row = elt.getAttribute 'data-r'
       col = elt.getAttribute 'data-c'
       do (row, col) =>
-        key = elt.getAttribute('xlink:href').slice(1)
+        href = elt.getAttribute('href') ? elt.getAttribute('xlink:href')
+        key = href.slice(1)
         if 0 <= row < @board.height() and 0 <= col < @board.width()
           tryPaint = =>
             # console.log(row, col)
@@ -308,11 +305,13 @@ class BoardView
         else if key == BoardView.removeColKey
           elt.addEventListener 'click', => @board.removeColumn col
 
+    # serializer = new XMLSerializer()
+    # console.log serializer.serializeToString svg
     return
 
 window.onload = ->
   load 'default.txt', defaultMapping
-  board = new Board(10, 10)
+  board = new Board 10, 10
   boardView = new BoardView(board, id('board'))
 
   id('load').addEventListener 'click', ->
