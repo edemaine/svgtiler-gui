@@ -218,9 +218,8 @@ class BoardView
       isAdd = key in [BoardView.addRowKey, BoardView.addColKey]
       """
       <symbol viewBox='0 0 20 20' #{if isRow then 'height' else 'width'}='auto'>
-        <rect width='12' height='12' x='4' y='4' rx='4' fill='#{if isAdd then 'green' else 'red'}' />
-        <text class='fa' x='10' y='10' alignment-baseline='middle' text-anchor='middle' stroke='white'>
-          #{if isAdd then '+' else '&#8722;'}
+        <text class='fas' x='10' y='10' dominant-baseline='middle' text-anchor='middle' fill='#{if isAdd then 'green' else 'red'}'>
+          #{if isAdd then '&#xf0fe;' else '&#xf146;'}
         </text>
       </symbol>
       """
