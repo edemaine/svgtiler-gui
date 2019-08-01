@@ -200,32 +200,35 @@ class Board
 class BoardView
   @defaultScale: 2
 
-  constructor: (@board, @boardDiv) ->
-    @board.addListener(@redraw)
-    @scale = BoardView.defaultScale
-    @redraw()
-
   @addRowKey: '__add_row__'
   @addColKey: '__add_col__'
   @removeRowKey: '__remove_row__'
   @removeColKey: '__remove_col__'
   @emptySpecialKey: '__empty__'
 
-  isSpecialKey: (key) -> /^__\w+__$/i.test key
+  constructor: (@board, @boardDiv) ->
+    @board.addListener(@redraw)
+    @scale = BoardView.defaultScale
 
-  uiMappingFunc: (key) =>
-    return unless @isSpecialKey key
-    return '' if key == BoardView.emptySpecialKey
-    isRow = key in [BoardView.addRowKey, BoardView.removeRowKey]
-    isAdd = key in [BoardView.addRowKey, BoardView.addColKey]
-    """
-    <symbol viewBox='0 0 20 20' #{if isRow then 'height' else 'width'}='auto'>
-      <rect width='12' height='12' x='4' y='4' rx='4' fill='#{if isAdd then 'green' else 'red'}' />
-      <text class='fa' x='10' y='10' alignment-baseline='middle' text-anchor='middle' stroke='white'>
-        #{if isAdd then '+' else '&#8722;'}
-      </text>
-    </symbol>
-    """
+    uiMapping = new svgtiler.Mapping()
+    uiMapping.load (key) =>
+      return unless @isSpecialKey key
+      return '' if key == BoardView.emptySpecialKey
+      isRow = key in [BoardView.addRowKey, BoardView.removeRowKey]
+      isAdd = key in [BoardView.addRowKey, BoardView.addColKey]
+      """
+      <symbol viewBox='0 0 20 20' #{if isRow then 'height' else 'width'}='auto'>
+        <rect width='12' height='12' x='4' y='4' rx='4' fill='#{if isAdd then 'green' else 'red'}' />
+        <text class='fa' x='10' y='10' alignment-baseline='middle' text-anchor='middle' stroke='white'>
+          #{if isAdd then '+' else '&#8722;'}
+        </text>
+      </symbol>
+      """
+    @mappings = new svgtiler.Mappings [uiMapping, mappings]
+
+    @redraw()
+
+  isSpecialKey: (key) -> /^__\w+__$/i.test key
 
   preprocessDrawing: (drawing) ->
     height = drawing.data.length
@@ -265,11 +268,7 @@ class BoardView
     @preprocessDrawing drawing
     console.log drawing.data
 
-    uiMapping = new svgtiler.Mapping()
-    uiMapping.load(@uiMappingFunc)
-    newMappings = new svgtiler.Mappings [uiMapping, mappings]
-
-    svg = drawing.renderSVGDOM(newMappings).documentElement
+    svg = drawing.renderSVGDOM(@mappings).documentElement
     @boardDiv.removeChild @boardDiv.firstChild while @boardDiv.firstChild
     @boardDiv.appendChild(svg)
 
