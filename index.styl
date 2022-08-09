@@ -51,12 +51,22 @@ input
   text-align: center
   background: #ddd
   border: solid #bbb
-  > code
-    display: block
-    text-align: left
+  &.selected
+    background: #6d6
+  > div
+    display: flex
+    justify-content: space-between
   > svg
     background: white
     box-shadow: 0 1px 6px 1px rgba(60,60,60,.4)
+
+#board
+  // center the board
+  display: flex
+  justify-content: center
+  align-items: center
+  > svg
+    user-select: none;
 
 // Flex
 .flexcol
